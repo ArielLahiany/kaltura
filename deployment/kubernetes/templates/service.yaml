@@ -1,0 +1,26 @@
+{{- if .Values.service }}
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "{{ template "summarizer.fullname" . }}"
+  labels:
+    {{- include "summarizer.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "summarizer.selectorLabels" . | nindent 4 }}
+  type: "{{ .Values.service.type }}"
+  {{- if .Values.service.clusterIP }}
+  clusterIP: "{{ .Values.service.clusterIP }}"
+  {{- end }}
+  ports:
+    {{- range $k,$v := .Values.service.ports }}
+    - name: "{{ $k }}"
+      protocol: "{{ $v.protocol }}"
+      port: {{ $v.port }}
+      targetPort: {{ $v.targetPort }}
+      {{- if $v.nodePort }}
+      nodePort: {{ $v.nodePort }}
+      {{- end }}
+    {{- end }}
+{{- end }}

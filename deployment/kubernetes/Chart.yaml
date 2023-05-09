@@ -1,0 +1,7 @@
+apiVersion: "v2"
+name: "summarizer"
+description: "A simple web application that summarizers a JSON POST requests."
+home: "https://www.kaltura.com/"
+type: "application"
+version: "0.1.0"
+appVersion: "v0.1.0"

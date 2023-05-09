@@ -1,0 +1,153 @@
+{{- if .Values.deployment }}
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "{{ template "summarizer.fullname" . }}"
+  labels:
+    {{- include "summarizer.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "summarizer.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.deployment.replicas }}
+  strategy:
+    type: "{{ .Values.deployment.strategy.type }}"
+    {{- if eq "RollingUpdate" .Values.deployment.strategy.type }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.deployment.strategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.deployment.strategy.rollingUpdate.maxSurge }}
+    {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "summarizer.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.deployment.hostAliases }}
+      hostAliases:
+        {{- range .Values.deployment.hostAliases }}
+        - ip: "{{ .ip }}"
+          hostnames:
+            {{- range .hostnames}}
+            - "{{ . }}"
+            {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.deployment.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.deployment.imagePullSecrets }}
+        - name: "{{ . }}"
+      {{- end }}
+      {{- end }}
+      containers:
+        {{- range $k, $v := .Values.deployment.containers }}
+        - name: "{{ $k }}"
+          image: "{{ $v.repository }}/{{ $v.image }}:{{ $v.tag }}"
+          imagePullPolicy: "{{ $v.imagePullPolicy }}"
+          {{- if $v.readinessProbe }}
+          readinessProbe:
+            {{- if eq "exec" $v.readinessProbe.type }}
+            exec:
+              command:
+                {{- range $v.readinessProbe.command }}
+                - "{{ . }}"
+                {{- end }}
+            {{- else if eq "httpGet" $v.readinessProbe.type }}
+            httpGet:
+              path: "{{ $v.readinessProbe.path }}"
+              port: {{ $v.readinessProbe.port }}
+            {{- else }}
+            tcpSocket:
+              port: {{ $v.readinessProbe.port }}
+            {{- end }}
+            initialDelaySeconds: {{ $v.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ $v.readinessProbe.periodSeconds }}
+            successThreshold: {{ $v.readinessProbe.successThreshold }}
+            failureThreshold: {{ $v.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- if $v.livenessProbe }}
+          livenessProbe:
+            {{- if eq "exec" $v.livenessProbe.type }}
+            exec:
+              command:
+                {{- range $v.livenessProbe.command }}
+                - "{{ . }}"
+                {{- end }}
+            {{- else if eq "httpGet" $v.livenessProbe.type }}
+            httpGet:
+              path: "{{ $v.livenessProbe.path }}"
+              port: {{ $v.livenessProbe.port }}
+            {{- else }}
+            tcpSocket:
+              port: {{ $v.livenessProbe.port }}
+            {{- end }}
+            initialDelaySeconds: {{ $v.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ $v.livenessProbe.periodSeconds }}
+            successThreshold: {{ $v.livenessProbe.successThreshold }}
+            failureThreshold: {{ $v.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if $v.ports }}
+          ports:
+            {{- range $p, $i := $v.ports }}
+            - name: "{{ $p }}"
+              protocol: "{{ $i.protocol }}"
+              containerPort: {{ $i.containerPort }}
+            {{- end }}
+          {{- end }}
+          {{- if $v.args }}
+          args:
+            {{- range $v.args }}
+            - "{{ . }}"
+            {{- end }}
+          {{- end }}
+          {{- if $v.env }}
+          env:
+            {{- range $e, $i := $v.env }}
+            {{- if $i.isEnabled }}
+            - name: "{{ $e | upper }}"
+              valueFrom:
+                {{- if eq "configMapKeyRef" $i.type }}
+                configMapKeyRef:
+                {{- else if eq "secretKeyRef" $i.type }}
+                secretKeyRef:
+                {{- end }}
+                  name: "{{ template "summarizer.fullname" $ }}"
+                  key: "{{ $e | upper }}"
+                  optional: {{ $i.optional }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- if $v.volumeMounts }}
+          volumeMounts:
+            {{- range $m, $i := $v.volumeMounts }}
+            {{- if $i.isEnabled }}
+            - name: "{{ template "summarizer.fullname" $ }}-{{ $m }}"
+              mountPath: "{{ $i.mountPath }}"
+              readOnly: {{ $i.readOnly }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- if .Values.deployment.volumes }}
+      volumes:
+        {{- range $k, $v := .Values.deployment.volumes }}
+        {{- if $v.isEnabled }}
+        - name: "{{ template "summarizer.fullname" $ }}-{{ $k }}"
+          {{- if eq "configMap" $v.type }}
+          configMap:
+            name: "{{ template "summarizer.fullname" $ }}"
+            items:
+              {{- range $_, $i := $v.items }}
+              {{- if $i.isEnabled }}
+              - key: "{{ $i.key }}"
+                path: "{{ $i.path }}"
+              {{- end }}
+              {{- end }}
+          {{- else if eq "persistentVolumeClaim" $v.type }}
+          persistentVolumeClaim:
+            claimName: "{{ template "summarizer.fullname" $ }}-{{ $k }}"
+          {{- end }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+{{- end }}
