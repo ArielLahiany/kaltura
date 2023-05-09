@@ -26,6 +26,15 @@ docker-compose/pull:
 docker-compose/up:
 	docker-compose --file deployment/docker/docker-compose.yaml --profile $(PROFILE) up -d
 
+# Elastic Kubernetes Service ----------------------------------------------------------------------------------------- #
+.PHONY: eks/create
+eks/create:
+	eksctl create cluster --config-file infrastructure/cluster.yaml
+
+.PHONY: eks/delete
+eks/delete:
+	eksctl delete cluster --config-file infrastructure/cluster.yaml
+
 # Gunicorn ----------------------------------------------------------------------------------------------------------- #
 .PHONY: gunicorn/run
 gunicorn/run:
