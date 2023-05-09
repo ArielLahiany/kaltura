@@ -13,7 +13,8 @@ A simple web application that summarizers a JSON POST requests.
 ## Prerequisites
 
 1. Docker: a working station with Docker and Docker-Compose pre-installed.
-2. Kubernetes: a working Kubernetes cluster and its Kubeconfig file.
+2. EKSCTL: a working station with the Elastic Kubernetes Service command line pre-installed.
+3. Kubernetes: a working Kubernetes cluster and its Kubeconfig file.
 
 ## Usage
 
