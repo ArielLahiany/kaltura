@@ -33,7 +33,7 @@ services:
       - "staging"
 
   summarizer:
-    image: "summarizer:v0.1.0"
+    image: "summarizer:v0.2.0"
     container_name: "summarizer"
     hostname: "summarizer"
     restart: "unless-stopped"
