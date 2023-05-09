@@ -1,16 +1,51 @@
-# This is a sample Python script.
+#!venv/bin/python3.9
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+# Flask's modules.
+from flask import (
+    Flask,
+    Response,
+    make_response,
+    request
+)
+
+# Variables declaration.
+application = Flask(__name__)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+@application.route(
+    rule="/api/add",
+    methods=[
+        "POST"
+    ]
+)
+def add() -> Response:
+    request_body: dict = request.get_json(
+        silent=True
+    )
+    return make_response(
+        {
+            "result": request_body["num1"] + request_body["num2"]
+        },
+        200
+    )
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+@application.route(
+    rule="/health",
+    methods=[
+        "GET"
+    ]
+)
+def health() -> Response:
+    return make_response(
+        "",
+        200
+    )
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+if __name__ == "__main__":
+    application.run(
+        host="0.0.0.0",
+        port=8000,
+        debug=True,
+    )
