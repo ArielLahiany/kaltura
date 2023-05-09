@@ -46,7 +46,13 @@ A simple web application that summarizers a JSON POST requests.
 
 ### Kubernetes
 
-1. Create a Kubernetes secret in order to pull from a private Docker registry:
+1. Provision an Elastic Kubernetes Service:
+
+   ```bash
+   make eks/create
+   ```
+
+2. Create a Kubernetes secret in order to pull from a private Docker registry:
 
    ```bash
    kubectl create secret docker-registry regcred \
@@ -56,13 +62,19 @@ A simple web application that summarizers a JSON POST requests.
            --namespace=counter-service
    ```
 
-2. Test the Helm deployment:
+3. Test the Helm deployment:
 
    ```bash
    make helm/test
    ```
 
-3. Deploy the Helm chart:
+4. Deploy the Helm chart:
    ```bash
    make helm/install
+   ```
+
+5. Destroy the Elastic Kubernetes Service cluster:
+
+   ```bash
+   make eks/delete
    ```
