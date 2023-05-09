@@ -1,0 +1,17 @@
+apiVersion: "eksctl.io/v1alpha5"
+kind: "ClusterConfig"
+
+metadata:
+  name: "kaltura-development-001"
+  region: "eu-central-1"
+
+nodeGroups:
+  - name: "nodegroup-001"
+    instanceType: "t2.micro"
+    desiredCapacity: 1
+    maxSize: 1
+    minSize: 1
+    volumeSize: 25
+    ssh:
+      allow: true
+      publicKeyPath: "~/.ssh/id_rsa.pub"
