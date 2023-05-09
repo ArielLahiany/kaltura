@@ -6,6 +6,9 @@
 Dockerfile
 docker-compose.yaml
 
+# Environment.
+.env
+
 # JetBrains.
 .idea
 
