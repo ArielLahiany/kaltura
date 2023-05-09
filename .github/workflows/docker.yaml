@@ -1,0 +1,68 @@
+name: "Docker"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "development"
+      - "main"
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+    paths_ignore:
+      - "*.md"
+      - "Makefile"
+      - "ssl"
+
+jobs:
+  docker:
+    runs-on: "ubuntu-22.04"
+    steps:
+      - id: "checkout"
+        name: "Checkouts the Git repository"
+        uses: "actions/checkout@v2"
+      - id: "name"
+        name: "Builds the Docker image name"
+        run: |
+          IMAGE_NAME=$(echo ${{ github.repository }} | tr "[:upper:]" "[:lower:]")
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+      - id: "tag"
+        name: "Builds the Docker image tag"
+        run: |
+          echo "IMAGE_TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - id: "qemu"
+        name: "Installs the QEMU binaries"
+        uses: "docker/setup-qemu-action@v1"
+        with:
+          platforms: "all"
+      - id: "buildx"
+        name: "Installs the Buildx CLI plugin"
+        uses: "docker/setup-buildx-action@v1"
+      - id: "cache"
+        name: "Caches the Docker building layers"
+        uses: "actions/cache@v2"
+        with:
+          path: "/tmp/.buildx-cache"
+          key: "${{ runner.os }}-buildx-${{ github.sha }}"
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - id: "credential"
+        name: "Setups the AWS credentials"
+        uses: "aws-actions/configure-aws-credentials@v1"
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "eu-west-1"
+      - id: "login"
+        name: "Logins to the Elastic Container Registry"
+        uses: "aws-actions/amazon-ecr-login@v1"
+      - id: "build"
+        name: "Builds the pushed the Docker image"
+        uses: "docker/build-push-action@v2"
+        with:
+          context: "."
+          file: "deployment/docker/Dockerfile"
+          platforms: "linux/amd64,linux/arm64"
+          tags: "${{ secrets.ECR_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          cache-from: "type=local,src=/tmp/.buildx-cache"
+          cache-to: "type=local,dest=/tmp/.buildx-cache"
+          push: true

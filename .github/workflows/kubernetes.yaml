@@ -1,0 +1,69 @@
+name: "Kubernetes"
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "Docker"
+    types:
+      - "completed"
+
+jobs:
+  kubernetes:
+    runs-on: "ubuntu-22.04"
+    if: "${{ github.event.workflow_run.conclusion == 'success' }}"
+    steps:
+      - id: "checkout"
+        name: "Checkouts the Git repository"
+        uses: "actions/checkout@v2"
+      - id: "name"
+        name: "Builds the Helm release name"
+        run: |
+          RELEASE_NAME=$(echo ${{ github.repository }} | tr "[:upper:]" "[:lower:]" | sed "s/.*\///")
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+      - id: "kubeconfig"
+        name: "Deploys the Kubeconfig file"
+        run: |
+          mkdir /tmp/.kube
+          echo "${{ secrets.KUBECONFIG_FILE }}" >> /tmp/.kube/config
+          chmod 600 /tmp/.kube/config
+      - id: "helm"
+        name: "Installs the Helm package"
+        run: |
+          curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+          sudo apt-get install apt-transport-https --yes
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+          sudo apt-get update
+          sudo apt-get install helm
+      - id: "kubectl"
+        name: "Install the Kubectl package"
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      - id: "test"
+        name: "Tests the Helm chart"
+        run: |
+          helm install ${{ env.RELEASE_NAME }} deployment/kubernetes \
+               --create-namespace \
+               --debug \
+               --dry-run \
+               --kubeconfig /tmp/.kube/config \
+               --namespace workflows
+      - id: "secret"
+        name: "Deploy the image pulling secret"
+        run: |
+          kubectl create secret docker-registry regcred \
+                  --docker-server=${{ secrets.ECR_URL }} \
+                  --docker-username=AWS \
+                  --docker-password=${{ secrets.ECR_PASSWORD }} \
+                  --namespace=workflows
+        env:
+          KUBECONFIG: "/tmp/.kube/config"
+      - id: "install"
+        name: "Installs the Helm chart"
+        run: |
+          helm upgrade ${{ env.RELEASE_NAME }} deployment/kubernetes \
+               --create-namespace \
+               --install \
+               --kubeconfig /tmp/.kube/config \
+               --namespace workflows
