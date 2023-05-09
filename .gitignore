@@ -1,0 +1,14 @@
+# JetBrains.
+.idea
+
+# Python.
+__pycache__
+
+# Source control.
+.git
+
+# Virtual environment.
+venv
+
+# Visual Studio Code.
+.vscode

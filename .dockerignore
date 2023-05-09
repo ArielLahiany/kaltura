@@ -1,0 +1,32 @@
+# Continuous Integration.
+.github
+
+# Docker.
+.dockerignore
+Dockerfile
+docker-compose.yaml
+
+# JetBrains.
+.idea
+
+# Make
+Makefile
+
+# Markdown.
+*.md
+
+# Python.
+__pycache__
+
+# Secure Socket Layer.
+ssl
+
+# Source control.
+.git
+.gitignore
+
+# Virtual environment.
+venv
+
+# Visual Studio Code.
+.vscode
