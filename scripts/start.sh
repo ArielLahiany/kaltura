@@ -19,7 +19,7 @@ docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME:$
 # Elastic Kubernetes Service ----------------------------------------------------------------------------------------- #
 eksctl create cluster --config-file infrastructure/cluster.yaml
 
-eksctl utils write-kubeconfig --cluster=kaltura-development --region=eu-central-1 --kubeconfig=/tmp/kubeconfig.yaml
+eksctl utils write-kubeconfig --cluster=kaltura-development-001 --region=$AWS_REGION --kubeconfig=/tmp/kubeconfig.yaml
 
 # Helm --------------------------------------------------------------------------------------------------------------- #
 helm install $SERVICE deployment/kubernetes --create-namespace --namespace=$NAMESPACE --kubeconfig=/tmp/kubeconfig.yaml

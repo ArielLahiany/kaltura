@@ -52,6 +52,7 @@ jobs:
       - id: "secret"
         name: "Deploy the image pulling secret"
         run: |
+          kubectl create namespace workflows
           kubectl create secret docker-registry regcred \
                   --docker-server=${{ secrets.ECR_URL }} \
                   --docker-username=AWS \
