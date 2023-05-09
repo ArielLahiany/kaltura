@@ -13,7 +13,7 @@ deployment:
   containers:
     summarizer:
       isEnabled: true
-      repository: "886748703774.dkr.ecr.eu-west-1.amazonaws.com"
+      repository: "886748703774.dkr.ecr.eu-central-1.amazonaws.com"
       image: "ariellahiany/kaltura"
       tag: "v0.2.0"
       imagePullPolicy: "IfNotPresent"
