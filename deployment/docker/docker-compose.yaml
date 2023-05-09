@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  nginx:
+    image: "docker.io/nginx:1.24.0-bullseye"
+    container_name: "nginx"
+    hostname: "nginx"
+    restart: "unless-stopped"
+    depends_on:
+      summarizer:
+        condition: "service_healthy"
+    networks:
+      kaltura:
+        ipv4_address: 172.16.1.3
+    ports:
+      - "0.0.0.0:80:80/tcp"
+      - "0.0.0.0:443:443/tcp"
+    volumes:
+      - type: "bind"
+        source: "./nginx"
+        target: "/etc/nginx/conf.d"
+        read_only: true
+      - type: "bind"
+        source: "./ssl"
+        target: "/etc/letsencrypt/live/summarizer.kaltura.local"
+        read_only: true
+      - type: "volume"
+        source: "nginx-log"
+        target: "/var/log/nginx/summarizer.kaltura.local"
+        read_only: false
+    profiles:
+      - "development"
+      - "staging"
+
+  summarizer:
+    image: "summarizer:v0.1.0"
+    container_name: "summarizer"
+    hostname: "summarizer"
+    restart: "unless-stopped"
+    healthcheck:
+      test: "curl --fail http://summarizer:8000/health || exit 1"
+      interval: "5s"
+      retries: 5
+      start_period: "5s"
+      timeout: "60s"
+    networks:
+      kaltura:
+        ipv4_address: 172.16.1.2
+    expose:
+      - "8000"
+    command:
+      - "gunicorn"
+      - "main:application"
+      - "--workers"
+      - "1"
+      - "--bind"
+      - "0.0.0.0:8000"
+    profiles:
+      - "development"
+      - "staging"
+
+networks:
+  kaltura:
+    name: "kaltura"
+    driver: "bridge"
+    driver_opts:
+      com.docker.network.bridge.name: "br0"
+    ipam:
+      driver: "default"
+      config:
+        - subnet: "172.16.1.0/24"
+          gateway: "172.16.1.1"
+
+volumes:
+  nginx-log:
+    name: "nginx-log"
+    driver: "local"
